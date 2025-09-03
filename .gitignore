@@ -1,0 +1,15 @@
+# Arquivos do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Ambiente virtual
+.venv/
+venv/
+ENV/
+
+# Configs do VSCode/PyCharm
+.vscode/
+.idea/
