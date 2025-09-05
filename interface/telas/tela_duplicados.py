@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-
+from core.duplicados import mover_duplicados
 
 class TelaDuplicados(tk.Frame):
     def __init__(self, parent, controller):
@@ -59,18 +59,46 @@ class TelaDuplicados(tk.Frame):
         tk.Button(
             self,
             text="Voltar",
-            command=lambda: controller.mostrar_tela("TelaInicial"),
+            command=self.voltar,
             fg="white",
             bg="gray20",
             width=15,
             height=2
         ).pack(pady=10)
 
+        tk.Label(
+            self,
+            text="Desenvolvido por Guilherme Ferreira Leite",
+            font=("Arial", 10),
+            fg="white",
+            bg="black"
+        ).pack(side="bottom", pady=10)
+
+    #método voltar e limpeza do caminho da pasta
+    def voltar (self):
+        self.caminho_pasta.set("Nenhuma pasta selecionada")
+        self.controller.mostrar_tela("TelaInicial")
+
+    #GERENCIADOR DO WINDOWS 
     def selecionar_pasta(self):
         pasta = filedialog.askdirectory()
         if pasta:
             self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
 
+    #CHAMA A PARTE LÓGICA
     def executar(self):
-        pasta = self.caminho_pasta.get()
-        print(f"Start pressionado no Duplicados com pasta={pasta}")
+        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
+
+        if not pasta or pasta.startswith("Nenhuma"):
+            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
+            return
+
+        try:
+            logs = mover_duplicados(pasta)
+            if isinstance(logs, list):
+                print("\n".join(logs))
+                tk.messagebox.showinfo("Sucesso", f"Duplicados movidos. {len(logs)} linhas no log (ver terminal).")
+            else:
+                tk.messagebox.showinfo("Sucesso", "Operação concluída. Verifique o terminal para detalhes.")
+        except Exception as e:
+            tk.messagebox.showerror("Erro", str(e))

@@ -1,4 +1,3 @@
-# gerenciador_arquivos/core/organizador.py
 import os
 import shutil
 from pathlib import Path

@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from core.renomeador import RenomeadorArquivos
 
 
 class TelaRenomeador(tk.Frame):
@@ -107,24 +108,58 @@ class TelaRenomeador(tk.Frame):
         tk.Button(
             self,
             text="Voltar",
-            command=lambda: controller.mostrar_tela("TelaInicial"),
+            command=self.voltar,
             fg="white",
             bg="gray20",
             width=15,
             height=2
         ).pack(pady=10)
 
+        tk.Label(
+            self,
+            text="Desenvolvido por Guilherme Ferreira Leite",
+            font=("Arial", 10),
+            fg="white",
+            bg="black"
+        ).pack(side="bottom", pady=10)
+
+
+    #método voltar e limpeza do caminho da pasta
+    def voltar (self):
+        self.caminho_pasta.set("Nenhuma pasta selecionada")
+        self.controller.mostrar_tela("TelaInicial")
+
+    #GERENCIADOR DO WINDOWS
     def selecionar_pasta(self):
         pasta = filedialog.askdirectory()
         if pasta:
             self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
 
+    #RODA A PARTE LÓGICA
     def executar(self):
-        pasta = self.caminho_pasta.get()
-        prefixo = self.prefixo_var.get()
-        opcoes = {
-            "todos": self.opcao_var1.get(),
-            "extensoes": self.opcao_var2.get(),
-            "ordenar": self.opcao_var3.get(),
-        }
-        print(f"Start pressionado com pasta={pasta}, prefixo={prefixo}, opcoes={opcoes}")
+        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
+        prefixo = self.prefixo_var.get().strip()
+
+
+        if not pasta or pasta.startswith("Nenhuma"):
+            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
+            return
+        if not prefixo:
+            tk.messagebox.showerror("Erro", "Digite um prefixo para os arquivos.")
+            return
+
+        # Definindo opções
+        manter_extensao = self.opcao_var.get() == "manter"
+        apenas_extensoes = self.opcao_var.get() == "extensoes"
+
+        try:
+            RenomeadorArquivos(
+                pasta,
+                prefixo,
+                manter_extensao=manter_extensao,
+                apenas_extensoes=apenas_extensoes
+            )
+            tk.messagebox.showinfo("Sucesso", "Arquivos renomeados com sucesso!")
+        except Exception as e:
+            tk.messagebox.showerror("Erro", str(e))
+

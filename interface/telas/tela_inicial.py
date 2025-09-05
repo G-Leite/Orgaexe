@@ -39,7 +39,7 @@ class TelaInicial(tk.Frame):
 
         tk.Label(
             self,
-            text="Desenvolvido por Seu Nome",
+            text="Desenvolvido por Guilherme Ferreira Leite",
             font=("Arial", 10),
             fg="white",
             bg="black"

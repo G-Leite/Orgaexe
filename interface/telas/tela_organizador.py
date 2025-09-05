@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from core.organizador import organizar_arquivos
 
 
 class TelaOrganizador(tk.Frame):
@@ -59,18 +60,46 @@ class TelaOrganizador(tk.Frame):
         tk.Button(
             self,
             text="Voltar",
-            command=lambda: controller.mostrar_tela("TelaInicial"),
+            command=self.voltar,
             fg="white",
             bg="gray20",
             width=15,
             height=2
         ).pack(pady=10)
 
+        tk.Label(
+            self,
+            text="Desenvolvido por Guilherme Ferreira Leite",
+            font=("Arial", 10),
+            fg="white",
+            bg="black"
+        ).pack(side="bottom", pady=10)
+
+    #método voltar e limpeza do caminho da pasta
+    def voltar (self):
+        self.caminho_pasta.set("Nenhuma pasta selecionada")
+        self.controller.mostrar_tela("TelaInicial")
+
+    #GERENCIADOR DO WINDOWS 
     def selecionar_pasta(self):
         pasta = filedialog.askdirectory()
         if pasta:
             self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
-
+    
+    #CHAMA O SCRIPT 
     def executar(self):
-        pasta = self.caminho_pasta.get()
-        print(f"Start pressionado no Organizador com pasta={pasta}")
+        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
+
+        if not pasta or pasta.startswith("Nenhuma"):
+            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
+            return
+
+        try:
+            logs = organizar_arquivos(pasta)
+            if isinstance(logs, list):
+                print("\n".join(logs))
+                tk.messagebox.showinfo("Sucesso", f"Organização Concluída. {len(logs)} entradas no terminal")
+            else:
+                tk.messagebox.showinfo("Sucesso", "Organização concluída. Verifique o terminal para detalhes.")
+        except Exception as e:
+            tk.messagebox.showerror("Erro", str(e))
