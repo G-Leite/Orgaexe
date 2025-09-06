@@ -1,105 +1,53 @@
-import tkinter as tk
-from tkinter import filedialog
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 from core.organizador import organizar_arquivos
+from __version__ import __version__
 
-
-class TelaOrganizador(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="black")
+class TelaOrganizador(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
         self.controller = controller
+        self.pasta = None
 
-        tk.Label(
-            self,
-            text="Organizador de Arquivos",
-            font=("Arial", 16),
-            fg="white",
-            bg="black"
-        ).pack(pady=20)
+        # ==== WIDGETS ====
+        frame = ctk.CTkFrame(self)
+        frame.pack(pady=40, padx=60, fill="both", expand=True)
 
-        tk.Label(
-            self,
-            text="Selecione uma pasta e organize os arquivos por categoria.",
-            font=("Arial", 12),
-            fg="white",
-            bg="black"
-        ).pack(pady=10)
+        titulo = ctk.CTkLabel(frame, text="Organizador de Arquivos", font=("Arial", 22, "bold"))
+        titulo.pack(pady=20)
 
-        # === Seleção de pasta ===
-        self.caminho_pasta = tk.StringVar(value="Nenhuma pasta selecionada")
+        subtitulo = ctk.CTkLabel(frame, text="Organiza os arquivos em pastas específicas. Exemplo: planilha.xlsx vai para a pasta 'Planilhas', imagem.png vai para a pasta 'Imagens'. ",wraplength=600, font=("Arial", 16))
+        subtitulo.pack(pady=20)
 
-        tk.Button(
-            self,
-            text="Selecionar Pasta",
-            command=self.selecionar_pasta,
-            fg="white",
-            bg="gray20",
-            width=20,
-            height=2
-        ).pack(pady=5)
+        btn_pasta = ctk.CTkButton(frame, text="Selecionar Pasta", command=self.selecionar_pasta, font=("Arial", 16))
+        btn_pasta.pack(pady=10)
 
-        tk.Label(
-            self,
-            textvariable=self.caminho_pasta,
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(pady=5)
+        btn_executar = ctk.CTkButton(frame, text="Iniciar", command=self.executar)
+        btn_executar.pack(pady=20)
 
-        # === Botão Start ===
-        tk.Button(
-            self,
-            text="Start",
-            command=self.executar,
-            fg="white",
-            bg="green",
-            width=15,
-            height=2
-        ).pack(pady=15)
+        btn_voltar = ctk.CTkButton(frame, text="Voltar", command=lambda: controller.mostrar_tela("TelaInicial"))
+        btn_voltar.pack(pady=10)
 
-        # === Botão Voltar ===
-        tk.Button(
-            self,
-            text="Voltar",
-            command=self.voltar,
-            fg="white",
-            bg="gray20",
-            width=15,
-            height=2
-        ).pack(pady=10)
+        rodape = ctk.CTkLabel(frame, text="Desenvolvido por Guilherme F. Leite", font=("Arial", 12))
+        rodape.pack(side="bottom", pady=10)
 
-        tk.Label(
-            self,
-            text="Desenvolvido por Guilherme Ferreira Leite",
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(side="bottom", pady=10)
+        versao = f"Versão {__version__}"
+        label_versao = ctk.CTkLabel(frame, text=versao, font=("Arial", 12))
+        label_versao.pack(side="bottom", pady=10)
 
-    #método voltar e limpeza do caminho da pasta
-    def voltar (self):
-        self.caminho_pasta.set("Nenhuma pasta selecionada")
-        self.controller.mostrar_tela("TelaInicial")
-
-    #GERENCIADOR DO WINDOWS 
+    # ==== MÉTODOS ====
     def selecionar_pasta(self):
-        pasta = filedialog.askdirectory()
-        if pasta:
-            self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
-    
-    #CHAMA O SCRIPT 
+        self.pasta = filedialog.askdirectory()
+        if self.pasta:
+            messagebox.showinfo("Pasta Selecionada", f"Pasta: {self.pasta}")
+
     def executar(self):
-        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
-
-        if not pasta or pasta.startswith("Nenhuma"):
-            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
+        if not self.pasta:
+            messagebox.showerror("Erro", "Escolha uma pasta antes de executar.")
             return
-
         try:
-            logs = organizar_arquivos(pasta)
-            if isinstance(logs, list):
-                print("\n".join(logs))
-                tk.messagebox.showinfo("Sucesso", f"Organização Concluída. {len(logs)} entradas no terminal")
-            else:
-                tk.messagebox.showinfo("Sucesso", "Organização concluída. Verifique o terminal para detalhes.")
+            organizar_arquivos(self.pasta)
+            messagebox.showinfo("Sucesso", "Arquivos organizados com sucesso!")
+            self.pasta = None
         except Exception as e:
-            tk.messagebox.showerror("Erro", str(e))
+            messagebox.showerror("Erro", str(e))

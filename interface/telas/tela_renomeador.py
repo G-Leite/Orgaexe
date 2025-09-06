@@ -1,165 +1,109 @@
-import tkinter as tk
-from tkinter import filedialog
-from core.renomeador import RenomeadorArquivos
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
+from core.renomeador import renomear_arquivos
+from __version__ import __version__
 
-
-class TelaRenomeador(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="black")
+class TelaRenomeador(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
         self.controller = controller
+        self.pasta = None
 
-        tk.Label(
-            self,
-            text="Renomeador de Arquivos",
-            font=("Arial", 16),
-            fg="white",
-            bg="black"
-        ).pack(pady=20)
+         # variável para controlar a escolha única
+        self.opcao_var = ctk.IntVar(value=0)
 
-        tk.Label(
-            self,
-            text="Aqui você poderá renomear arquivos em lote.",
-            font=("Arial", 12),
-            fg="white",
-            bg="black"
-        ).pack(pady=10)
+        frame = ctk.CTkFrame(self)
+        frame.pack(pady=40, padx=60, fill="both", expand=True)
 
-        # === Seleção de pasta ===
-        self.caminho_pasta = tk.StringVar(value="Nenhuma pasta selecionada")
+        titulo = ctk.CTkLabel(frame, text="Renomeador de Arquivos", font=("Arial", 22, "bold"))
+        titulo.pack(pady=15)
 
-        tk.Button(
-            self,
-            text="Selecionar Pasta",
-            command=self.selecionar_pasta,
-            fg="white",
-            bg="gray20",
-            width=20,
-            height=2
-        ).pack(pady=5)
+        # seleção de pasta
+        btn_pasta = ctk.CTkButton(frame, text="Selecionar Pasta", command=self.selecionar_pasta)
+        btn_pasta.pack(pady=5)
 
-        tk.Label(
-            self,
-            textvariable=self.caminho_pasta,
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(pady=5)
+        # entrada prefixo
+        titulo_prefixo = ctk.CTkLabel(frame, text="Nome para renomeação", font=("Arial", 16, "bold"))
+        titulo_prefixo.pack(pady=5)
 
-        # === Campo de prefixo ===
-        tk.Label(
-            self,
-            text="Prefixo para os arquivos:",
-            font=("Arial", 12),
-            fg="white",
-            bg="black"
-        ).pack(pady=5)
+        self.prefixo_var = ctk.StringVar()
+        prefixo_entry = ctk.CTkEntry(frame, textvariable=self.prefixo_var, placeholder_text="Digite o prefixo")
+        prefixo_entry.pack(pady=5)
 
-        self.prefixo_var = tk.StringVar()
-        tk.Entry(
-            self,
-            textvariable=self.prefixo_var,
-            width=30,
-            bg="gray20",
-            fg="white",
-            insertbackground="white"
-        ).pack(pady=5)
+        # entrada extensão
+        titulo_extensao = ctk.CTkLabel(frame, text="Extensão Específica", font=("Arial", 16, "bold"))
+        titulo_extensao.pack(pady=5)
 
-        # === Opções de renomeação ===
-        self.opcao_var1 = tk.BooleanVar()
-        self.opcao_var2 = tk.BooleanVar()
-        self.opcao_var3 = tk.BooleanVar()
+        self.var_extensao = ctk.StringVar()
+        entrada_ext = ctk.CTkEntry(frame, textvariable=self.var_extensao, placeholder_text="Digite extensão (opcional)")
+        entrada_ext.pack(pady=5)
 
-        tk.Checkbutton(
-            self,
-            text="Renomear todos os arquivos (mantendo extensão)",
-            variable=self.opcao_var1,
-            fg="white", bg="black", selectcolor="gray20",
-            activebackground="black", activeforeground="white"
-        ).pack(anchor="w", padx=50, pady=2)
+        # opções exclusivas (tipo radio button)
+        lbl_opcoes = ctk.CTkLabel(frame, text="Escolha uma opção de renomeação:", font=("Arial", 16, "bold"))
+        lbl_opcoes.pack(pady=(20, 10))
 
-        tk.Checkbutton(
-            self,
-            text="Renomear apenas arquivos de extensões específicas",
-            variable=self.opcao_var2,
-            fg="white", bg="black", selectcolor="gray20",
-            activebackground="black", activeforeground="white"
-        ).pack(anchor="w", padx=50, pady=2)
+        rb1 = ctk.CTkRadioButton(frame, text="Renomeia todos os arquivos", variable=self.opcao_var, value=1, font=("Arial", 16))
+        rb1.pack(pady=5)
+        lbl_rb1 = ctk.CTkLabel(frame, text="Renomeia todos os arquivos encontrados, indepedente da extensão", font=("Arial", 16))
+        lbl_rb1.pack(pady=(0, 10))
 
-        tk.Checkbutton(
-            self,
-            text="Ordenar do mais antigo para o mais recente",
-            variable=self.opcao_var3,
-            fg="white", bg="black", selectcolor="gray20",
-            activebackground="black", activeforeground="white"
-        ).pack(anchor="w", padx=50, pady=2)
+        linha = ctk.CTkFrame(master=frame, height=2, corner_radius=0, fg_color="gray40")
+        linha.pack(fill="x", pady=10, padx=20)
 
-        # === Botão Start ===
-        tk.Button(
-            self,
-            text="Start",
-            command=self.executar,
-            fg="white",
-            bg="green",
-            width=15,
-            height=2
-        ).pack(pady=15)
+        rb2 = ctk.CTkRadioButton(frame, text="Somente arquivos de extensão específica", variable=self.opcao_var, value=2, font=("Arial", 16))
+        rb2.pack(pady=5)
+        lbl_rb2 = ctk.CTkLabel(frame, text="Renomeia apenas arquivos com a extensão digitada acima.", font=("Arial", 16))
+        lbl_rb2.pack(pady=(0, 10))
 
-        # === Botão Voltar ===
-        tk.Button(
-            self,
-            text="Voltar",
-            command=self.voltar,
-            fg="white",
-            bg="gray20",
-            width=15,
-            height=2
-        ).pack(pady=10)
+        linha = ctk.CTkFrame(master=frame, height=2, corner_radius=0, fg_color="gray40")
+        linha.pack(fill="x", pady=10, padx=20)
 
-        tk.Label(
-            self,
-            text="Desenvolvido por Guilherme Ferreira Leite",
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(side="bottom", pady=10)
+        rb3 = ctk.CTkRadioButton(frame, text="Renomeia do mais antigo para o mais recente", variable=self.opcao_var, value=3, font=("Arial", 16))
+        rb3.pack(pady=5)
+        lbl_rb3 = ctk.CTkLabel(frame, text="Renomeia do mais antigo para o mais novo/última vez modificado. O mais antigo será o 01. ", font=("Arial", 16))
+        lbl_rb3.pack(pady=(0, 10))
 
+        # botão de execução
+        btn_executar = ctk.CTkButton(frame, text="Iniciar", command=self.executar)
+        btn_executar.pack(pady=10)
 
-    #método voltar e limpeza do caminho da pasta
-    def voltar (self):
-        self.caminho_pasta.set("Nenhuma pasta selecionada")
-        self.controller.mostrar_tela("TelaInicial")
+        # botão de voltar
+        btn_voltar = ctk.CTkButton(frame, text="Voltar", command=lambda: controller.mostrar_tela("TelaInicial"))
+        btn_voltar.pack(pady=10)
 
-    #GERENCIADOR DO WINDOWS
+        versao = f"Versão {__version__}"
+        label_versao = ctk.CTkLabel(frame, text=versao, font=("Arial", 12))
+        label_versao.pack(side="bottom", pady=10)
+
     def selecionar_pasta(self):
-        pasta = filedialog.askdirectory()
-        if pasta:
-            self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
+        self.pasta = filedialog.askdirectory()
+        if self.pasta:
+            messagebox.showinfo("Pasta Selecionada", f"Pasta: {self.pasta}")
 
-    #RODA A PARTE LÓGICA
     def executar(self):
-        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
+        if not self.pasta:
+            messagebox.showerror("Erro", "Escolha uma pasta antes de executar.")
+            return
+
         prefixo = self.prefixo_var.get().strip()
-
-
-        if not pasta or pasta.startswith("Nenhuma"):
-            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
-            return
         if not prefixo:
-            tk.messagebox.showerror("Erro", "Digite um prefixo para os arquivos.")
+            messagebox.showerror("Erro", "Digite um prefixo.")
             return
 
-        # Definindo opções
-        manter_extensao = self.opcao_var.get() == "manter"
-        apenas_extensoes = self.opcao_var.get() == "extensoes"
+        opcao = self.opcao_var.get()
+        extensao = self.var_extensao.get().strip() or None
+
+        if opcao == 0:
+            messagebox.showerror("Erro", "Escolha uma opção de renomeação.")
+            return
 
         try:
-            RenomeadorArquivos(
-                pasta,
-                prefixo,
-                manter_extensao=manter_extensao,
-                apenas_extensoes=apenas_extensoes
-            )
-            tk.messagebox.showinfo("Sucesso", "Arquivos renomeados com sucesso!")
+            # Aqui você pode passar a 'opcao' para o core e tratar lá
+            renomear_arquivos(self.pasta, prefixo, extensao, opcao)
+            messagebox.showinfo("Sucesso", "Arquivos renomeados com sucesso!")
+            self.prefixo_var.set("")
+            self.var_extensao.set("")
+            self.opcao_var.set(0)
+            self.pasta = None
         except Exception as e:
-            tk.messagebox.showerror("Erro", str(e))
-
+            messagebox.showerror("Erro", str(e))

@@ -1,104 +1,53 @@
-import tkinter as tk
-from tkinter import filedialog
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 from core.duplicados import mover_duplicados
+from __version__ import __version__
 
-class TelaDuplicados(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="black")
+class TelaDuplicados(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
         self.controller = controller
+        self.pasta = None
 
-        tk.Label(
-            self,
-            text="Remoção de Arquivos Duplicados",
-            font=("Arial", 16),
-            fg="white",
-            bg="black"
-        ).pack(pady=20)
+        # ==== WIDGETS ====
+        frame = ctk.CTkFrame(self)
+        frame.pack(pady=40, padx=60, fill="both", expand=True)
 
-        tk.Label(
-            self,
-            text="Selecione uma pasta e mova os arquivos duplicados para 'Duplicados/'.",
-            font=("Arial", 12),
-            fg="white",
-            bg="black"
-        ).pack(pady=10)
+        titulo = ctk.CTkLabel(frame, text="Removedor de Duplicados Semi-Automático", font=("Arial", 22, "bold"))
+        titulo.pack(pady=20)
 
-        # === Seleção de pasta ===
-        self.caminho_pasta = tk.StringVar(value="Nenhuma pasta selecionada")
+        subtitulo = ctk.CTkLabel(frame, text="Move arquivos duplicados para pasta Duplicados, você decide o que fazer com eles.", font=("Arial", 16))
+        subtitulo.pack(pady=20)
 
-        tk.Button(
-            self,
-            text="Selecionar Pasta",
-            command=self.selecionar_pasta,
-            fg="white",
-            bg="gray20",
-            width=20,
-            height=2
-        ).pack(pady=5)
+        btn_pasta = ctk.CTkButton(frame, text="Selecionar Pasta", command=self.selecionar_pasta, font=("Arial", 16))
+        btn_pasta.pack(pady=10)
 
-        tk.Label(
-            self,
-            textvariable=self.caminho_pasta,
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(pady=5)
+        btn_executar = ctk.CTkButton(frame, text="Iniciar", command=self.executar, font=("Arial", 16))
+        btn_executar.pack(pady=20)
 
-        # === Botão Start ===
-        tk.Button(
-            self,
-            text="Start",
-            command=self.executar,
-            fg="white",
-            bg="green",
-            width=15,
-            height=2
-        ).pack(pady=15)
+        btn_voltar = ctk.CTkButton(frame, text="Voltar", command=lambda: controller.mostrar_tela("TelaInicial"))
+        btn_voltar.pack(pady=10)
 
-        # === Botão Voltar ===
-        tk.Button(
-            self,
-            text="Voltar",
-            command=self.voltar,
-            fg="white",
-            bg="gray20",
-            width=15,
-            height=2
-        ).pack(pady=10)
+        rodape = ctk.CTkLabel(frame, text="Desenvolvido por Guilherme F. Leite", font=("Arial", 12))
+        rodape.pack(side="bottom", pady=10)
 
-        tk.Label(
-            self,
-            text="Desenvolvido por Guilherme Ferreira Leite",
-            font=("Arial", 10),
-            fg="white",
-            bg="black"
-        ).pack(side="bottom", pady=10)
+        versao = f"Versão {__version__}"
+        label_versao = ctk.CTkLabel(frame, text=versao, font=("Arial", 12))
+        label_versao.pack(side="bottom", pady=10)
 
-    #método voltar e limpeza do caminho da pasta
-    def voltar (self):
-        self.caminho_pasta.set("Nenhuma pasta selecionada")
-        self.controller.mostrar_tela("TelaInicial")
-
-    #GERENCIADOR DO WINDOWS 
+    # ==== MÉTODOS ====
     def selecionar_pasta(self):
-        pasta = filedialog.askdirectory()
-        if pasta:
-            self.caminho_pasta.set(f"Pasta selecionada: {pasta}")
+        self.pasta = filedialog.askdirectory()
+        if self.pasta:
+            messagebox.showinfo("Pasta Selecionada", f"Pasta: {self.pasta}")
 
-    #CHAMA A PARTE LÓGICA
     def executar(self):
-        pasta = self.caminho_pasta.get().replace("Pasta selecionada: ", "")
-
-        if not pasta or pasta.startswith("Nenhuma"):
-            tk.messagebox.showerror("Erro", "Selecione uma pasta.")
+        if not self.pasta:
+            messagebox.showerror("Erro", "Escolha uma pasta antes de executar.")
             return
-
         try:
-            logs = mover_duplicados(pasta)
-            if isinstance(logs, list):
-                print("\n".join(logs))
-                tk.messagebox.showinfo("Sucesso", f"Duplicados movidos. {len(logs)} linhas no log (ver terminal).")
-            else:
-                tk.messagebox.showinfo("Sucesso", "Operação concluída. Verifique o terminal para detalhes.")
+            mover_duplicados(self.pasta)
+            messagebox.showinfo("Sucesso", "Duplicados movidos para a pasta 'Duplicados'!")
+            self.pasta = None
         except Exception as e:
-            tk.messagebox.showerror("Erro", str(e))
+            messagebox.showerror("Erro", str(e))

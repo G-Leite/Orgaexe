@@ -1,32 +1,37 @@
-import tkinter as tk
+import customtkinter as ctk
 from interface.telas.tela_inicial import TelaInicial
 from interface.telas.tela_renomeador import TelaRenomeador
 from interface.telas.tela_organizador import TelaOrganizador
 from interface.telas.tela_duplicados import TelaDuplicados
 
 
-class App(tk.Tk):
+class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Organizador de Arquivos")
-        self.geometry("600x400")
-        self.configure(bg="black")
+        
+        self.title("Orgaexe - Organizador de Arquivos")
+        self.geometry("900x800")  # Janela maior
+        self.resizable(True, True)
 
-        container = tk.Frame(self, bg="black")
-        container.pack(fill="both", expand=True)
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+
+        self.container = ctk.CTkFrame(self)
+        self.container.pack(fill="both", expand=True)
 
         self.telas = {}
         for Tela in (TelaInicial, TelaRenomeador, TelaOrganizador, TelaDuplicados):
-            nome_tela = Tela.__name__
-            frame = Tela(parent=container, controller=self)
-            self.telas[nome_tela] = frame
-            frame.grid(row=0, column=0, sticky="nsew")
+            frame = Tela(master=self.container, controller=self)
+            self.telas[Tela.__name__] = frame
+            frame.pack(fill="both", expand=True)
+            frame.pack_forget()
 
         self.mostrar_tela("TelaInicial")
 
-    def mostrar_tela(self, nome_tela):
-        frame = self.telas[nome_tela]
-        frame.tkraise()
+    def mostrar_tela(self, nome_tela: str):
+        for tela in self.telas.values():
+            tela.pack_forget()
+        self.telas[nome_tela].pack(fill="both", expand=True)
 
 
 def iniciar_interface():

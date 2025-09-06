@@ -1,52 +1,51 @@
 import os
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Optional
 
 
-class RenomeadorArquivos:
-    def __init__(self, pasta: str, prefixo: str, extensao: Optional[str] = None):
-        self.pasta = Path(pasta)
-        self.prefixo = prefixo
-        self.extensao = extensao.lower() if extensao else None
+def renomear_arquivos(pasta: str, prefixo: str, extensao: Optional[str] = None, opcao: int = 1) -> list[str]:
+    """
+    Renomeia arquivos em uma pasta.
 
-        if not self.pasta.exists():
-            raise FileNotFoundError(f"A pasta {self.pasta} não existe.")
+    Args:
+        pasta (str): Caminho da pasta com os arquivos.
+        prefixo (str): Prefixo usado nos novos nomes.
+        extensao (str | None): Extensão alvo (se opcao == 2).
+        opcao (int): Define o modo de renomeação:
+            1 - Renomeia todos os arquivos (mantém extensões originais).
+            2 - Renomeia apenas arquivos da extensão informada.
+            3 - Renomeia do mais antigo para o mais recente.
 
-    def _listar_arquivos(self) -> list[Path]:
-        arquivos = [f for f in self.pasta.iterdir() if f.is_file()]
+    Returns:
+        list[str]: Lista de strings com o log das renomeações.
+    """
+    pasta = Path(pasta)
+    if not pasta.exists() or not pasta.is_dir():
+        raise FileNotFoundError(f"Pasta inválida: {pasta}")
 
-        if self.extensao:
-            arquivos = [f for f in arquivos if f.suffix.lower() == self.extensao]
+    arquivos = [f for f in pasta.iterdir() if f.is_file()]
 
-        return arquivos
+    # Filtro por extensão se opção 2
+    if opcao == 2 and extensao:
+        arquivos = [f for f in arquivos if f.suffix.lower() == extensao.lower()]
 
-    def _ordenar_arquivos(self, arquivos: list[Path], criterio: Literal["nome", "data_criacao", "data_modificacao"]) -> list[Path]:
-        #ordem alfabetica
-        if criterio == "nome":
-            return sorted(arquivos, key=lambda f: f.name.lower())
-        #do mais antigo para o mais novo
-        elif criterio == "data_criacao":
-            return sorted(arquivos, key=lambda f: f.stat().st_ctime)
-        #do mais antigo para o mais novo, ou do último alterado para o mais novo
-        elif criterio == "data_modificacao":
-            return sorted(arquivos, key=lambda f: f.stat().st_mtime)
-        else:
-            raise ValueError("Critério de ordenação inválido. Use: 'nome', 'data_criacao' ou 'data_modificacao'.")
+    if not arquivos:
+        return ["Nenhum arquivo encontrado para renomear."]
 
-    def renomear(self, criterio: Literal["nome", "data_criacao", "data_modificacao"] = "nome") -> int:
-        arquivos = self._listar_arquivos()
-        if not arquivos:
-            print("Nenhum arquivo encontrado para renomear.")
-            return 0
+    # Ordenação
+    if opcao == 3:
+        arquivos.sort(key=lambda f: f.stat().st_mtime)  # Mais antigo → mais recente
+    else:
+        arquivos.sort()  # Ordem alfabética padrão
 
-        arquivos = self._ordenar_arquivos(arquivos, criterio)
+    log = []
+    for idx, arquivo in enumerate(arquivos, start=1):
+        nova_ext = arquivo.suffix if opcao != 2 or not extensao else extensao
+        novo_nome = f"{prefixo}-{idx:02d}{nova_ext}"
+        novo_caminho = pasta / novo_nome
 
-        for idx, arquivo in enumerate(arquivos, start=1):
-            novo_nome = f"{self.prefixo}-{idx:02d}{arquivo.suffix}"
-            novo_caminho = arquivo.with_name(novo_nome)
+        arquivo.rename(novo_caminho)
+        log.append(f"{arquivo.name} → {novo_nome}")
 
-            os.rename(arquivo, novo_caminho)
-            print(f"Renomeado: {arquivo.name} → {novo_nome}")
-
-        print(f"\nTotal renomeado: {len(arquivos)} arquivo(s).")
-        return len(arquivos)
+    log.append(f"Total renomeado: {len(arquivos)} arquivo(s).")
+    return log
